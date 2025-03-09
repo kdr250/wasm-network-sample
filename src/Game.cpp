@@ -1,4 +1,5 @@
 #include "Game.h"
+#include <algorithm>
 
 Game::Game() {}
 
@@ -14,8 +15,8 @@ bool Game::Initialize()
     mWindow = SDL_CreateWindow("Wasm Network Sample",
                                SDL_WINDOWPOS_UNDEFINED,
                                SDL_WINDOWPOS_UNDEFINED,
-                               1024,
-                               768,
+                               WINDOW_WIDTH,
+                               WINDOW_HEIGHT,
                                0);
 
     if (!mWindow)
@@ -32,6 +33,10 @@ bool Game::Initialize()
         SDL_Log("Failed to create renderer: %s", SDL_GetError());
         return false;
     }
+
+    // Game specific
+    mPaddlePosition.x = static_cast<float>(WINDOW_WIDTH) / 2.0f;
+    mPaddlePosition.y = static_cast<float>(WINDOW_HEIGHT) / 2.0f;
 
     return true;
 }
@@ -73,6 +78,26 @@ void Game::ProcessInput()
     {
         mIsRunning = false;
     }
+
+    // Update paddle velocity
+    mPaddleVelocity.x = 0.0f;
+    mPaddleVelocity.y = 0.0f;
+    if (state[SDL_SCANCODE_W])
+    {
+        mPaddleVelocity.y = -mPaddleSpeed;
+    }
+    if (state[SDL_SCANCODE_S])
+    {
+        mPaddleVelocity.y = mPaddleSpeed;
+    }
+    if (state[SDL_SCANCODE_A])
+    {
+        mPaddleVelocity.x = -mPaddleSpeed;
+    }
+    if (state[SDL_SCANCODE_D])
+    {
+        mPaddleVelocity.x = mPaddleSpeed;
+    }
 }
 
 void Game::UpdateGame()
@@ -88,6 +113,17 @@ void Game::UpdateGame()
 
     // Update tick counts (for next frame)
     mTickCount = SDL_GetTicks64();
+
+    // Update paddle position
+    mPaddlePosition.x += mPaddleVelocity.x * deltaTime;
+    mPaddlePosition.y += mPaddleVelocity.y * deltaTime;
+
+    mPaddlePosition.x = std::clamp(mPaddlePosition.x,
+                                   mPaddleThickness / 2.0f,
+                                   WINDOW_WIDTH - mPaddleThickness / 2.0f);
+    mPaddlePosition.y = std::clamp(mPaddlePosition.y,
+                                   mPaddleThickness / 2.0f,
+                                   WINDOW_HEIGHT - mPaddleThickness / 2.0f);
 }
 
 void Game::GenerateOutput()
@@ -101,6 +137,13 @@ void Game::GenerateOutput()
     SDL_SetRenderDrawColor(mRenderer, 0, 0, 255, 255);
 
     SDL_RenderClear(mRenderer);
+
+    SDL_SetRenderDrawColor(mRenderer, 255, 0, 0, 255);
+    SDL_Rect paddle {static_cast<int>(mPaddlePosition.x - mPaddleThickness / 2),
+                     static_cast<int>(mPaddlePosition.y - mPaddleThickness / 2),
+                     mPaddleThickness,
+                     mPaddleThickness};
+    SDL_RenderFillRect(mRenderer, &paddle);
 
     SDL_RenderPresent(mRenderer);
 }

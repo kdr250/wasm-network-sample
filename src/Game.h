@@ -2,6 +2,12 @@
 
 #include <SDL2/SDL.h>
 
+struct Vector2
+{
+    float x;
+    float y;
+};
+
 class Game
 {
 public:
@@ -26,6 +32,9 @@ private:
 
     void GenerateOutput();
 
+    static constexpr int WINDOW_WIDTH  = 1024;
+    static constexpr int WINDOW_HEIGHT = 768;
+
     // Window created by SDL
     SDL_Window* mWindow = nullptr;
 
@@ -37,4 +46,10 @@ private:
 
     // Game should continue to run
     bool mIsRunning = true;
+
+    // Game specific
+    Vector2 mPaddlePosition;
+    Vector2 mPaddleVelocity;
+    float mPaddleSpeed   = 200.0f;
+    int mPaddleThickness = 50;
 };
