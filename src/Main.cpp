@@ -5,90 +5,36 @@
     #include <emscripten/html5.h>
 #endif
 
-SDL_Window* window     = nullptr;
-SDL_Renderer* renderer = nullptr;
-bool isRunning         = true;
+#include "Game.h"
 
-void Terminate()
+int main(int argc, char* argv[])
 {
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-}
+    Game game;
 
-void MainLoop()
-{
-#ifdef __EMSCRIPTEN__
-    if (!isRunning)
+    if (!game.Initialize())
     {
-        emscripten_cancel_main_loop();
-        Terminate();
-        return;
+        return EXIT_FAILURE;
     }
-#endif
 
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
+#ifdef __EMSCRIPTEN__
+    auto callback = [](void* arg)
     {
-        switch (event.type)
+        Game* pGame = reinterpret_cast<Game*>(arg);
+        if (!pGame->IsRunning())
         {
-            case SDL_QUIT:
-                isRunning = false;
-                break;
+            emscripten_cancel_main_loop();
+            pGame->Shutdown();
+            return;
         }
-    }
-
-    const Uint8* state = SDL_GetKeyboardState(NULL);
-    if (state[SDL_SCANCODE_ESCAPE])
-    {
-        isRunning = false;
-    }
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-
-    SDL_RenderClear(renderer);
-
-    SDL_RenderPresent(renderer);
-}
-
-int main(int argc, char** argv)
-{
-    int sdlResult = SDL_Init(SDL_INIT_VIDEO);
-    if (sdlResult != 0)
-    {
-        SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
-        return EXIT_FAILURE;
-    }
-
-    window = SDL_CreateWindow("Wasm Network Sample",
-                              SDL_WINDOWPOS_UNDEFINED,
-                              SDL_WINDOWPOS_UNDEFINED,
-                              1024,
-                              768,
-                              0);
-
-    if (!window)
-    {
-        SDL_Log("Failed to create window: %s", SDL_GetError());
-        return EXIT_FAILURE;
-    }
-
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-    if (!renderer)
-    {
-        SDL_Log("Failed to create renderer: %s", SDL_GetError());
-        return EXIT_FAILURE;
-    }
-
-#ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop(MainLoop, 0, 1);
+        pGame->MainLoop();
+    };
+    emscripten_set_main_loop_arg(callback, &game, 60, true);
 #else
-    while (isRunning)
+    while (game.IsRunning())
     {
-        MainLoop();
+        game.MainLoop();
     }
-    Terminate();
+    game.Shutdown();
 #endif
 
     return EXIT_SUCCESS;
