@@ -1,5 +1,7 @@
 #include "Network.h"
 #include <SDL2/SDL.h>
+#include <sstream>
+#include <string>
 #include "Game.h"
 
 #ifdef __EMSCRIPTEN__
@@ -18,14 +20,7 @@ namespace EMWebSocket
                    const EmscriptenWebSocketOpenEvent* websocketEvent,
                    void* userData)
     {
-        SDL_Log("On Open");
-
-        EMSCRIPTEN_RESULT result =
-            emscripten_websocket_send_utf8_text(websocketEvent->socket, "Hello");
-        if (result)
-        {
-            SDL_Log("Failed to execute emscripten_websocket_send_utf8_text(): %i", result);
-        }
+        SDL_Log("WebSocket On Open");
         return EM_TRUE;
     }
 
@@ -33,7 +28,7 @@ namespace EMWebSocket
                     const EmscriptenWebSocketErrorEvent* websocketEvent,
                     void* userData)
     {
-        SDL_Log("On Error");
+        SDL_Log("WebSocket On Error");
         return EM_TRUE;
     }
 
@@ -41,7 +36,7 @@ namespace EMWebSocket
                     const EmscriptenWebSocketCloseEvent* websocketEvent,
                     void* userData)
     {
-        SDL_Log("On Close");
+        SDL_Log("WebSocket On Close");
         return EM_TRUE;
     }
 
@@ -49,35 +44,70 @@ namespace EMWebSocket
                       const EmscriptenWebSocketMessageEvent* websocketEvent,
                       void* userData)
     {
-        SDL_Log("On Message");
+        SDL_Log("WebSocket On Message");
+
+        Game* pGame = reinterpret_cast<Game*>(userData);
 
         if (websocketEvent->isText)
         {
-            SDL_Log("message: %s", websocketEvent->data);  // for only ascii chars
+            const char* data = reinterpret_cast<const char*>(websocketEvent->data);
+            std::string strData(data);
+            std::stringstream stringStream(strData);
+
+            std::string type, strId, strX, strY;
+
+            stringStream >> type;
+            if (type != "MoveEvent")
+            {
+                return EM_TRUE;
+            }
+
+            stringStream >> strId >> strX >> strY;
+
+            int id  = unsigned(std::stoi(strId));
+            float x = std::stof(strX);
+            float y = std::stof(strY);
+
+            pGame->Receive(id, x, y);
         }
 
         return EM_TRUE;
     }
 
-    void Run(bool* isRunning)
+    void Run(Game* game)
     {
         EmscriptenWebSocketCreateAttributes websocketAttributes = {"ws://127.0.0.1:8080/echo",
                                                                    NULL,
-                                                                   EM_TRUE};
+                                                                   EM_FALSE};
 
         EMSCRIPTEN_WEBSOCKET_T websocket = emscripten_websocket_new(&websocketAttributes);
 
-        emscripten_websocket_set_onopen_callback(websocket, NULL, EMWebSocket::OnOpen);
-        emscripten_websocket_set_onerror_callback(websocket, NULL, EMWebSocket::OnError);
-        emscripten_websocket_set_onclose_callback(websocket, NULL, EMWebSocket::OnClose);
-        emscripten_websocket_set_onmessage_callback(websocket, NULL, EMWebSocket::OnMessage);
+        emscripten_websocket_set_onopen_callback(websocket, (void*)game, EMWebSocket::OnOpen);
+        emscripten_websocket_set_onerror_callback(websocket, (void*)game, EMWebSocket::OnError);
+        emscripten_websocket_set_onclose_callback(websocket, (void*)game, EMWebSocket::OnClose);
+        emscripten_websocket_set_onmessage_callback(websocket, (void*)game, EMWebSocket::OnMessage);
 
         // FIXME
-        while (*isRunning)
-            ;
+        while (game->IsRunning())
+        {
+            if (game->IsAnyAction())
+            {
+                unsigned int id = game->GetId();
+                auto& position  = game->GetPosition();
 
-        EMSCRIPTEN_RESULT result;
-        result = emscripten_websocket_close(websocket, 1000, "clinet shutdown!");
+                std::string data = "MoveEvent " + std::to_string(game->GetId()) + " "
+                                   + std::to_string(position.x) + " " + std::to_string(position.y);
+
+                EMSCRIPTEN_RESULT result =
+                    emscripten_websocket_send_utf8_text(websocket, data.c_str());
+                if (result)
+                {
+                    SDL_Log("Failed to execute emscripten_websocket_send_utf8_text(): %i", result);
+                }
+            }
+        }
+
+        EMSCRIPTEN_RESULT result = emscripten_websocket_close(websocket, 1000, nullptr);
         if (result)
         {
             SDL_Log("Failed to emscripten_websocket_close(): %d", result);
@@ -87,7 +117,7 @@ namespace EMWebSocket
 #else
 namespace WebSocket
 {
-    void Run(bool* isRunning)
+    void Run(Game* game)
     {
         // Required on Windows
         ix::initNetSystem();
@@ -125,7 +155,7 @@ namespace WebSocket
         webSocket.start();
 
         // FIXME
-        while (*isRunning)
+        while (game->IsRunning())
             ;
     }
 }  // namespace WebSocket
@@ -133,7 +163,7 @@ namespace WebSocket
 
 Network::Network() {}
 
-bool Network::Initialize(bool* isRunning)
+bool Network::Initialize(Game* game)
 {
 #ifdef __EMSCRIPTEN__
     if (!emscripten_websocket_is_supported())
@@ -144,12 +174,12 @@ bool Network::Initialize(bool* isRunning)
 #endif
 
     mNetworkThread = std::make_unique<std::thread>(
-        [isRunning]()
+        [game]()
         {
 #ifdef __EMSCRIPTEN__
-            EMWebSocket::Run(isRunning);
+            EMWebSocket::Run(game);
 #else
-            WebSocket::Run(isRunning);
+            WebSocket::Run(game);
 #endif
         });
 

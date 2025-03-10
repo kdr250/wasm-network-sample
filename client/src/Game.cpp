@@ -1,7 +1,13 @@
 #include "Game.h"
 #include <algorithm>
+#include <random>
 
-Game::Game() {}
+Game::Game()
+{
+    std::random_device randomDevice;
+    std::mt19937 mt(randomDevice());
+    mId = mt();
+}
 
 bool Game::Initialize()
 {
@@ -39,7 +45,7 @@ bool Game::Initialize()
     mPaddlePosition.y = static_cast<float>(WINDOW_HEIGHT) / 2.0f;
 
     // Network
-    bool networkResult = network.Initialize(&mIsRunning);
+    bool networkResult = network.Initialize(this);
     if (!networkResult)
     {
         SDL_Log("Failed to initialize network...");
@@ -66,6 +72,27 @@ void Game::Shutdown()
 bool Game::IsRunning()
 {
     return mIsRunning;
+}
+
+void Game::Receive(unsigned int id, float x, float y)
+{
+    // TODO
+    SDL_Log("Receive! id: %i, x: %f, y: %f", id, x, y);
+}
+
+const unsigned int Game::GetId() const
+{
+    return mId;
+}
+
+const Vector2& Game::GetPosition() const
+{
+    return mPaddlePosition;
+}
+
+bool Game::IsAnyAction()
+{
+    return mAnyAction;
 }
 
 void Game::ProcessInput()
@@ -106,6 +133,8 @@ void Game::ProcessInput()
     {
         mPaddleVelocity.x = mPaddleSpeed;
     }
+
+    mAnyAction = mPaddleVelocity.x != 0.0f || mPaddleVelocity.y != 0.0f;
 }
 
 void Game::UpdateGame()

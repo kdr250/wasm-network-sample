@@ -10,9 +10,8 @@ class Network
 {
 public:
     Network();
-    bool Initialize(bool* isRunning);
+    bool Initialize(class Game* game);
 
 private:
     std::unique_ptr<std::thread> mNetworkThread;
-    std::vector<Vector2> mOtherPositions;
 };

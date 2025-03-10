@@ -3,6 +3,7 @@
 #include <SDL2/SDL.h>
 #include <memory>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 #include "Network.h"
 
@@ -27,6 +28,14 @@ public:
     void Shutdown();
 
     bool IsRunning();
+
+    void Receive(unsigned int id, float x, float y);
+
+    const unsigned int GetId() const;
+
+    const Vector2& GetPosition() const;
+
+    bool IsAnyAction();
 
 private:
     // Herlper functions for the game loop
@@ -58,4 +67,7 @@ private:
     int mPaddleThickness = 50;
 
     Network network;
+    unsigned int mId;
+    bool mAnyAction = false;
+    std::unordered_map<unsigned int, Vector2> otherPositions;
 };
