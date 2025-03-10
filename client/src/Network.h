@@ -4,13 +4,15 @@
 #include <thread>
 #include <vector>
 
+struct Vector2;
+
 class Network
 {
 public:
     Network();
-    void Initialize(bool* isRunning);
+    bool Initialize(bool* isRunning);
 
 private:
-    std::unique_ptr<std::thread> networkThread;
-    std::vector<struct Vector2> otherPositions;
+    std::unique_ptr<std::thread> mNetworkThread;
+    std::vector<Vector2> mOtherPositions;
 };

@@ -39,7 +39,12 @@ bool Game::Initialize()
     mPaddlePosition.y = static_cast<float>(WINDOW_HEIGHT) / 2.0f;
 
     // Network
-    network.Initialize(&mIsRunning);
+    bool networkResult = network.Initialize(&mIsRunning);
+    if (!networkResult)
+    {
+        SDL_Log("Failed to initialize network...");
+        return false;
+    }
 
     return true;
 }
