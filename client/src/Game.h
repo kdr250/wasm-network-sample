@@ -3,6 +3,8 @@
 #include <SDL2/SDL.h>
 #include <memory>
 #include <thread>
+#include <vector>
+#include "Network.h"
 
 struct Vector2
 {
@@ -55,6 +57,5 @@ private:
     float mPaddleSpeed   = 200.0f;
     int mPaddleThickness = 50;
 
-    // Network
-    std::unique_ptr<std::thread> otherPlayers;
+    Network network;
 };
