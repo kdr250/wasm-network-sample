@@ -3,6 +3,10 @@
         {
             "name": "sdl2",
             "platform": "!wasm32"
+        },
+        {
+            "name": "ixwebsocket",
+            "platform": "!wasm32"
         }
     ]
 }
