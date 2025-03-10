@@ -1,13 +1,7 @@
 #include "Game.h"
 #include <algorithm>
-#include <random>
 
-Game::Game()
-{
-    std::random_device randomDevice;
-    std::mt19937 mt(randomDevice());
-    mId = mt();
-}
+Game::Game() {}
 
 bool Game::Initialize()
 {
@@ -74,10 +68,28 @@ bool Game::IsRunning()
     return mIsRunning;
 }
 
-void Game::Receive(unsigned int id, float x, float y)
+void Game::Receive(int id, float x, float y)
 {
-    // TODO
-    SDL_Log("Receive! id: %i, x: %f, y: %f", id, x, y);
+    if (id == mId)
+    {
+        return;
+    }
+
+    auto iter = otherPositions.find(id);
+    if (iter == otherPositions.end())
+    {
+        otherPositions.emplace(id, Vector2 {x, y});
+    }
+    else
+    {
+        iter->second.x = x;
+        iter->second.y = y;
+    }
+}
+
+void Game::SetId(int id)
+{
+    mId = id;
 }
 
 const unsigned int Game::GetId() const
@@ -181,6 +193,22 @@ void Game::GenerateOutput()
                      mPaddleThickness,
                      mPaddleThickness};
     SDL_RenderFillRect(mRenderer, &paddle);
+
+    auto iter = otherPositions.begin();
+    while (iter != otherPositions.end())
+    {
+        unsigned int id   = iter->first;
+        Vector2& position = iter->second;
+
+        SDL_Rect paddle;
+        paddle.x = static_cast<int>(position.x - mPaddleThickness / 2);
+        paddle.y = static_cast<int>(position.y - mPaddleThickness / 2);
+        paddle.w = mPaddleThickness;
+        paddle.h = mPaddleThickness;
+        SDL_RenderFillRect(mRenderer, &paddle);
+
+        ++iter;
+    }
 
     SDL_RenderPresent(mRenderer);
 }

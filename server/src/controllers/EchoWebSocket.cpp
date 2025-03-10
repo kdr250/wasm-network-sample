@@ -1,4 +1,5 @@
 #include "EchoWebSocket.h"
+#include <string>
 
 void EchoWebSocket::handleNewMessage(const WebSocketConnectionPtr& connectionPtr,
                                      std::string&& message,
@@ -40,6 +41,10 @@ void EchoWebSocket::handleNewConnection(const HttpRequestPtr& requestPtr,
                            });
 
     connectionPtr->setContext(std::make_shared<Subscriber>(std::move(subscriber)));
+
+    connectionPtr->send("RegisterEvent " + std::to_string(subscriber.id));
+
+    channels.publish("testTopicName", "SyncEvent");
 }
 
 void EchoWebSocket::handleConnectionClosed(const WebSocketConnectionPtr& connectionPtr)

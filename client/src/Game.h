@@ -29,7 +29,9 @@ public:
 
     bool IsRunning();
 
-    void Receive(unsigned int id, float x, float y);
+    void Receive(int id, float x, float y);
+
+    void SetId(int id);
 
     const unsigned int GetId() const;
 
@@ -67,7 +69,7 @@ private:
     int mPaddleThickness = 50;
 
     Network network;
-    unsigned int mId;
+    int mId         = 0;
     bool mAnyAction = false;
     std::unordered_map<unsigned int, Vector2> otherPositions;
 };

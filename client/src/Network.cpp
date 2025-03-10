@@ -16,6 +16,21 @@
 #ifdef __EMSCRIPTEN__
 namespace EMWebSocket
 {
+    void SendPosition(Game* game, EMSCRIPTEN_WEBSOCKET_T websocket)
+    {
+        unsigned int id = game->GetId();
+        auto& position  = game->GetPosition();
+
+        std::string data = "MoveEvent " + std::to_string(game->GetId()) + " "
+                           + std::to_string(position.x) + " " + std::to_string(position.y);
+
+        EMSCRIPTEN_RESULT result = emscripten_websocket_send_utf8_text(websocket, data.c_str());
+        if (result)
+        {
+            SDL_Log("Failed to execute emscripten_websocket_send_utf8_text(): %i", result);
+        }
+    }
+
     EM_BOOL OnOpen(int eventType,
                    const EmscriptenWebSocketOpenEvent* websocketEvent,
                    void* userData)
@@ -44,8 +59,6 @@ namespace EMWebSocket
                       const EmscriptenWebSocketMessageEvent* websocketEvent,
                       void* userData)
     {
-        SDL_Log("WebSocket On Message");
-
         Game* pGame = reinterpret_cast<Game*>(userData);
 
         if (websocketEvent->isText)
@@ -54,21 +67,31 @@ namespace EMWebSocket
             std::string strData(data);
             std::stringstream stringStream(strData);
 
-            std::string type, strId, strX, strY;
+            std::string type;
 
             stringStream >> type;
-            if (type != "MoveEvent")
+            if (type == "RegisterEvent")
             {
-                return EM_TRUE;
+                std::string strId;
+                stringStream >> strId;
+                int id = std::stoi(strId);
+                pGame->SetId(id);
             }
+            if (type == "SyncEvent")
+            {
+                SendPosition(pGame, websocketEvent->socket);
+            }
+            if (type == "MoveEvent")
+            {
+                std::string strId, strX, strY;
+                stringStream >> strId >> strX >> strY;
 
-            stringStream >> strId >> strX >> strY;
+                int id  = std::stoi(strId);
+                float x = std::stof(strX);
+                float y = std::stof(strY);
 
-            int id  = unsigned(std::stoi(strId));
-            float x = std::stof(strX);
-            float y = std::stof(strY);
-
-            pGame->Receive(id, x, y);
+                pGame->Receive(id, x, y);
+            }
         }
 
         return EM_TRUE;
@@ -92,18 +115,7 @@ namespace EMWebSocket
         {
             if (game->IsAnyAction())
             {
-                unsigned int id = game->GetId();
-                auto& position  = game->GetPosition();
-
-                std::string data = "MoveEvent " + std::to_string(game->GetId()) + " "
-                                   + std::to_string(position.x) + " " + std::to_string(position.y);
-
-                EMSCRIPTEN_RESULT result =
-                    emscripten_websocket_send_utf8_text(websocket, data.c_str());
-                if (result)
-                {
-                    SDL_Log("Failed to execute emscripten_websocket_send_utf8_text(): %i", result);
-                }
+                SendPosition(game, websocket);
             }
         }
 
