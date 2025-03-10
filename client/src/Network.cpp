@@ -59,7 +59,7 @@ namespace EMWebSocket
         return EM_TRUE;
     }
 
-    void Run()
+    void Run(bool* isRunning)
     {
         EmscriptenWebSocketCreateAttributes websocketAttributes = {"ws://127.0.0.1:8080/echo",
                                                                    NULL,
@@ -71,10 +71,20 @@ namespace EMWebSocket
         emscripten_websocket_set_onerror_callback(websocket, NULL, EMWebSocket::OnError);
         emscripten_websocket_set_onclose_callback(websocket, NULL, EMWebSocket::OnClose);
         emscripten_websocket_set_onmessage_callback(websocket, NULL, EMWebSocket::OnMessage);
+
+        // FIXME
+        while (*isRunning)
+            ;
+
+        EMSCRIPTEN_RESULT result;
+        result = emscripten_websocket_close(websocket, 1000, "clinet shutdown!");
+        if (result)
+        {
+            SDL_Log("Failed to emscripten_websocket_close(): %d", result);
+        }
     }
 }  // namespace EMWebSocket
-#endif
-
+#else
 namespace WebSocket
 {
     void Run(bool* isRunning)
@@ -119,6 +129,7 @@ namespace WebSocket
             ;
     }
 }  // namespace WebSocket
+#endif
 
 Network::Network() {}
 
@@ -136,11 +147,12 @@ bool Network::Initialize(bool* isRunning)
         [isRunning]()
         {
 #ifdef __EMSCRIPTEN__
-            EmWebSocket::Run();
+            EMWebSocket::Run(isRunning);
 #else
             WebSocket::Run(isRunning);
 #endif
         });
+
     mNetworkThread->detach();
 
     return true;
