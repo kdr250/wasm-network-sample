@@ -40,7 +40,7 @@ add_executable(
 
 if (EMSCRIPTEN)
 
-    set(USE_FLAGS "-s USE_SDL=2 --preload-file resources/")
+    set(USE_FLAGS "-s USE_SDL=2 -pthread -sPTHREAD_POOL_SIZE=2 --preload-file resources/")
     set(CMAKE_CXX_FLAGS ${USE_FLAGS})
     set_target_properties(main PROPERTIES SUFFIX ".js")
 

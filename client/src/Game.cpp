@@ -38,6 +38,19 @@ bool Game::Initialize()
     mPaddlePosition.x = static_cast<float>(WINDOW_WIDTH) / 2.0f;
     mPaddlePosition.y = static_cast<float>(WINDOW_HEIGHT) / 2.0f;
 
+    // Network
+    bool* isRunning = &mIsRunning;
+    otherPlayers    = std::make_unique<std::thread>(
+        [isRunning]()
+        {
+            while (*isRunning)
+            {
+                SDL_Log("Hello world!");
+            }
+            SDL_Log("Finish!");
+        });
+    otherPlayers->detach();
+
     return true;
 }
 

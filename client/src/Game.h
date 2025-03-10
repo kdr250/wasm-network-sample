@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+#include <memory>
+#include <thread>
 
 struct Vector2
 {
@@ -52,4 +54,7 @@ private:
     Vector2 mPaddleVelocity;
     float mPaddleSpeed   = 200.0f;
     int mPaddleThickness = 50;
+
+    // Network
+    std::unique_ptr<std::thread> otherPlayers;
 };
