@@ -92,6 +92,13 @@ namespace EMWebSocket
 
                 pGame->Receive(id, x, y);
             }
+            if (type == "CloseEvent")
+            {
+                std::string strId;
+                stringStream >> strId;
+                int id = std::stoi(strId);
+                pGame->Remove(id);
+            }
         }
 
         return EM_TRUE;
@@ -113,7 +120,8 @@ namespace EMWebSocket
         // FIXME
         while (game->IsRunning())
         {
-            if (game->IsAnyAction())
+            if (game->IsAnyAction()
+                && SDL_TICKS_PASSED(SDL_GetTicks64(), game->GetTickCount() + 16))
             {
                 SendPosition(game, websocket);
             }

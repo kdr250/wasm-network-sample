@@ -31,11 +31,15 @@ public:
 
     void Receive(int id, float x, float y);
 
+    void Remove(int id);
+
     void SetId(int id);
 
     const unsigned int GetId() const;
 
     const Vector2& GetPosition() const;
+
+    const Uint64 GetTickCount() const;
 
     bool IsAnyAction();
 

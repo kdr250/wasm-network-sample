@@ -87,6 +87,11 @@ void Game::Receive(int id, float x, float y)
     }
 }
 
+void Game::Remove(int id)
+{
+    otherPositions.erase(id);
+}
+
 void Game::SetId(int id)
 {
     mId = id;
@@ -100,6 +105,11 @@ const unsigned int Game::GetId() const
 const Vector2& Game::GetPosition() const
 {
     return mPaddlePosition;
+}
+
+const Uint64 Game::GetTickCount() const
+{
+    return mTickCount;
 }
 
 bool Game::IsAnyAction()

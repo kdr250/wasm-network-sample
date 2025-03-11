@@ -53,4 +53,6 @@ void EchoWebSocket::handleConnectionClosed(const WebSocketConnectionPtr& connect
     LOG_DEBUG << "WebSocket closed!";
     auto& subscriber = connectionPtr->getContextRef<Subscriber>();
     channels.unsubscribe("testTopicName", subscriber.id);
+
+    channels.publish("testTopicName", "CloseEvent " + std::to_string(subscriber.id));
 }
