@@ -1,6 +1,11 @@
 #pragma once
 
 #include <SDL2/SDL.h>
+#include <memory>
+#include <thread>
+#include <unordered_map>
+#include <vector>
+#include "Network.h"
 
 struct Vector2
 {
@@ -23,6 +28,20 @@ public:
     void Shutdown();
 
     bool IsRunning();
+
+    void Receive(int id, float x, float y);
+
+    void Remove(int id);
+
+    void SetId(int id);
+
+    const unsigned int GetId() const;
+
+    const Vector2& GetPosition() const;
+
+    const Uint64 GetTickCount() const;
+
+    bool IsAnyAction();
 
 private:
     // Herlper functions for the game loop
@@ -52,4 +71,9 @@ private:
     Vector2 mPaddleVelocity;
     float mPaddleSpeed   = 200.0f;
     int mPaddleThickness = 50;
+
+    Network network;
+    int mId         = 0;
+    bool mAnyAction = false;
+    std::unordered_map<unsigned int, Vector2> otherPositions;
 };

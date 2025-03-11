@@ -38,6 +38,14 @@ bool Game::Initialize()
     mPaddlePosition.x = static_cast<float>(WINDOW_WIDTH) / 2.0f;
     mPaddlePosition.y = static_cast<float>(WINDOW_HEIGHT) / 2.0f;
 
+    // Network
+    bool networkResult = network.Initialize(this);
+    if (!networkResult)
+    {
+        SDL_Log("Failed to initialize network...");
+        return false;
+    }
+
     return true;
 }
 
@@ -58,6 +66,55 @@ void Game::Shutdown()
 bool Game::IsRunning()
 {
     return mIsRunning;
+}
+
+void Game::Receive(int id, float x, float y)
+{
+    if (id == mId)
+    {
+        return;
+    }
+
+    auto iter = otherPositions.find(id);
+    if (iter == otherPositions.end())
+    {
+        otherPositions.emplace(id, Vector2 {x, y});
+    }
+    else
+    {
+        iter->second.x = x;
+        iter->second.y = y;
+    }
+}
+
+void Game::Remove(int id)
+{
+    otherPositions.erase(id);
+}
+
+void Game::SetId(int id)
+{
+    mId = id;
+}
+
+const unsigned int Game::GetId() const
+{
+    return mId;
+}
+
+const Vector2& Game::GetPosition() const
+{
+    return mPaddlePosition;
+}
+
+const Uint64 Game::GetTickCount() const
+{
+    return mTickCount;
+}
+
+bool Game::IsAnyAction()
+{
+    return mAnyAction;
 }
 
 void Game::ProcessInput()
@@ -98,6 +155,8 @@ void Game::ProcessInput()
     {
         mPaddleVelocity.x = mPaddleSpeed;
     }
+
+    mAnyAction = mPaddleVelocity.x != 0.0f || mPaddleVelocity.y != 0.0f;
 }
 
 void Game::UpdateGame()
@@ -144,6 +203,22 @@ void Game::GenerateOutput()
                      mPaddleThickness,
                      mPaddleThickness};
     SDL_RenderFillRect(mRenderer, &paddle);
+
+    auto iter = otherPositions.begin();
+    while (iter != otherPositions.end())
+    {
+        unsigned int id   = iter->first;
+        Vector2& position = iter->second;
+
+        SDL_Rect paddle;
+        paddle.x = static_cast<int>(position.x - mPaddleThickness / 2);
+        paddle.y = static_cast<int>(position.y - mPaddleThickness / 2);
+        paddle.w = mPaddleThickness;
+        paddle.h = mPaddleThickness;
+        SDL_RenderFillRect(mRenderer, &paddle);
+
+        ++iter;
+    }
 
     SDL_RenderPresent(mRenderer);
 }
