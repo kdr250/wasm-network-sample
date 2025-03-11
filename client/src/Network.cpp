@@ -137,27 +137,78 @@ namespace EMWebSocket
 #else
 namespace WebSocket
 {
+    void SendPosition(Game* game, std::shared_ptr<ix::WebSocket> webSocket)
+    {
+        unsigned int id = game->GetId();
+        auto& position  = game->GetPosition();
+
+        std::string data = "MoveEvent " + std::to_string(game->GetId()) + " "
+                           + std::to_string(position.x) + " " + std::to_string(position.y);
+
+        auto result = webSocket->send(data);
+        if (!result.success)
+        {
+            SDL_Log("Failed to send data...");
+        }
+    }
+
     void Run(Game* game)
     {
         // Required on Windows
         ix::initNetSystem();
 
         // websockt object
-        ix::WebSocket webSocket;
+        std::shared_ptr<ix::WebSocket> webSocket = std::make_shared<ix::WebSocket>();
 
         // Connecto to a server
         std::string url("ws://127.0.0.1:8080/echo");
-        webSocket.setUrl(url);
+        webSocket->setUrl(url);
 
         // Setup a callback fired when a message or an event (open, close, error) is received
-        webSocket.setOnMessageCallback(
-            [](const ix::WebSocketMessagePtr& message)
+        webSocket->setOnMessageCallback(
+            [game, webSocket](const ix::WebSocketMessagePtr& message)
             {
                 switch (message->type)
                 {
                     case ix::WebSocketMessageType::Message:
-                        SDL_Log("received message: %s", message->str.c_str());
+                    {
+                        std::stringstream stringStream(message->str);
+
+                        std::string type;
+
+                        stringStream >> type;
+                        if (type == "RegisterEvent")
+                        {
+                            std::string strId;
+                            stringStream >> strId;
+                            int id = std::stoi(strId);
+                            game->SetId(id);
+                        }
+                        if (type == "SyncEvent")
+                        {
+                            SendPosition(game, webSocket);
+                        }
+                        if (type == "MoveEvent")
+                        {
+                            std::string strId, strX, strY;
+                            stringStream >> strId >> strX >> strY;
+
+                            int id  = std::stoi(strId);
+                            float x = std::stof(strX);
+                            float y = std::stof(strY);
+
+                            game->Receive(id, x, y);
+                        }
+                        if (type == "CloseEvent")
+                        {
+                            std::string strId;
+                            stringStream >> strId;
+                            int id = std::stoi(strId);
+                            game->Remove(id);
+                        }
+
                         break;
+                    }
 
                     case ix::WebSocketMessageType::Open:
                         SDL_Log("Connection established");
@@ -172,11 +223,19 @@ namespace WebSocket
                 }
             });
 
-        webSocket.start();
+        webSocket->start();
 
         // FIXME
         while (game->IsRunning())
-            ;
+        {
+            if (game->IsAnyAction()
+                && SDL_TICKS_PASSED(SDL_GetTicks64(), game->GetTickCount() + 16))
+            {
+                SendPosition(game, webSocket);
+            }
+        }
+
+        webSocket->close();
     }
 }  // namespace WebSocket
 #endif
