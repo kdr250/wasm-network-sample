@@ -204,13 +204,13 @@ void Game::GenerateOutput()
                      mPaddleThickness};
     SDL_RenderFillRect(mRenderer, &paddle);
 
+    SDL_SetRenderDrawColor(mRenderer, 255, 128, 0, 255);
     auto iter = otherPositions.begin();
     while (iter != otherPositions.end())
     {
         unsigned int id   = iter->first;
         Vector2& position = iter->second;
 
-        SDL_Rect paddle;
         paddle.x = static_cast<int>(position.x - mPaddleThickness / 2);
         paddle.y = static_cast<int>(position.y - mPaddleThickness / 2);
         paddle.w = mPaddleThickness;
