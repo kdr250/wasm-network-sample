@@ -72,9 +72,8 @@ namespace EMWebSocket
             stringStream >> type;
             if (type == "RegisterEvent")
             {
-                std::string strId;
-                stringStream >> strId;
-                int id = std::stoi(strId);
+                int id;
+                stringStream >> id;
                 pGame->SetId(id);
             }
             if (type == "SyncEvent")
@@ -83,20 +82,15 @@ namespace EMWebSocket
             }
             if (type == "MoveEvent")
             {
-                std::string strId, strX, strY;
-                stringStream >> strId >> strX >> strY;
-
-                int id  = std::stoi(strId);
-                float x = std::stof(strX);
-                float y = std::stof(strY);
-
+                int id;
+                float x, y;
+                stringStream >> id >> x >> y;
                 pGame->Receive(id, x, y);
             }
             if (type == "CloseEvent")
             {
-                std::string strId;
-                stringStream >> strId;
-                int id = std::stoi(strId);
+                int id;
+                stringStream >> id;
                 pGame->Remove(id);
             }
         }
@@ -179,9 +173,8 @@ namespace WebSocket
                         stringStream >> type;
                         if (type == "RegisterEvent")
                         {
-                            std::string strId;
-                            stringStream >> strId;
-                            int id = std::stoi(strId);
+                            int id;
+                            stringStream >> id;
                             game->SetId(id);
                         }
                         if (type == "SyncEvent")
@@ -190,20 +183,15 @@ namespace WebSocket
                         }
                         if (type == "MoveEvent")
                         {
-                            std::string strId, strX, strY;
-                            stringStream >> strId >> strX >> strY;
-
-                            int id  = std::stoi(strId);
-                            float x = std::stof(strX);
-                            float y = std::stof(strY);
-
+                            int id;
+                            float x, y;
+                            stringStream >> id >> x >> y;
                             game->Receive(id, x, y);
                         }
                         if (type == "CloseEvent")
                         {
-                            std::string strId;
-                            stringStream >> strId;
-                            int id = std::stoi(strId);
+                            int id;
+                            stringStream >> id;
                             game->Remove(id);
                         }
 
